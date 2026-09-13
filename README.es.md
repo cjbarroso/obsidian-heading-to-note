@@ -73,7 +73,7 @@ Tres formas de dispararlo:
 
 | Ajuste | Por defecto | Qué hace |
 |---|---|---|
-| Carpeta destino | *(vacío)* | Vacío = la carpeta de la nota de origen. Si la ruta no existe, se crea. |
+| Carpeta destino | *(vacío)* | Vacío = la carpeta de la nota de origen. Si la ruta no existe, se crea. El campo autocompleta las carpetas del vault. |
 | Abrir la nota nueva | activado | Abre la nota extraída en una pestaña nueva. |
 | Heredar el frontmatter | activado | Copia las propiedades de la nota de origen. |
 | Propiedades excluidas | `id, aliases` | Propiedades que nunca se copian (evita duplicar el `id` del Zettelkasten). |

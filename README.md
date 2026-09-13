@@ -73,7 +73,7 @@ Three ways to run it:
 
 | Setting | Default | Description |
 |---|---|---|
-| Destination folder | *(empty)* | Empty means the folder of the source note. A path that does not exist is created. |
+| Destination folder | *(empty)* | Empty means the folder of the source note. A path that does not exist is created. The field autocompletes the folders in the vault. |
 | Open the new note | on | Opens the extracted note in a new tab. |
 | Inherit frontmatter | on | Copies the source note's properties. |
 | Excluded properties | `id, aliases` | Properties that are never copied (keeps a Zettelkasten `id` from being duplicated). |
