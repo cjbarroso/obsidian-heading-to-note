@@ -80,6 +80,7 @@ HeadingToNotePlugin
   rewriteLinks()            reescribe los enlaces entrantes a los encabezados movidos
 
 HeadingSuggestModal        lista buscable de encabezados
+FolderSuggest              autocompletado de carpetas para "Carpeta destino"
 HeadingToNoteSettingTab    ajustes
 ```
 
@@ -254,5 +255,8 @@ gh release download v1.0.1 --repo cjbarroso/obsidian-heading-to-note --dir /tmp/
 - **No introduzcas un paso de build** sin actualizar el workflow: hoy el release publica
   `main.js` tal cual sale del repo.
 - **No añadas dependencias**: un plugin sin bundler no puede resolver `node_modules`.
+- **`AbstractInputSuggest` no rellena el campo por su cuenta.** Su `selectSuggestion` base solo
+  llama al callback de `onSelect`: sin sobrescribirlo, el campo se queda con lo tecleado y la
+  lista abierta (ver `FolderSuggest.selectSuggestion`).
 - Los textos de la UI están en español; si algún día se envía a la tienda de la comunidad,
   habrá que internacionalizar antes.
