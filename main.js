@@ -10,7 +10,9 @@ const {
 	PluginSettingTab,
 	Setting,
 	SuggestModal,
+	AbstractInputSuggest,
 	Notice,
+	TFolder,
 	normalizePath,
 	parseYaml,
 	stringifyYaml,
@@ -479,6 +481,55 @@ class HeadingSuggestModal extends SuggestModal {
 }
 
 /* ------------------------------------------------------------------ */
+/* Autocompletado de carpetas                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Sugerencias de carpeta para el ajuste "Carpeta destino". La opción vacía
+ * significa "junto a la nota de origen", igual que el campo en blanco.
+ */
+class FolderSuggest extends AbstractInputSuggest {
+	constructor(app, inputEl) {
+		super(app, inputEl);
+		this.limit = 50;
+	}
+
+	getSuggestions(query) {
+		const q = String(query || '')
+			.trim()
+			.replace(/^\/+|\/+$/g, '')
+			.toLowerCase();
+
+		const folders = this.app.vault
+			.getAllLoadedFiles()
+			.filter((f) => f instanceof TFolder && f.path !== '/')
+			.map((f) => f.path)
+			.sort((a, b) => a.localeCompare(b));
+
+		const out = [];
+		if (!q) out.push('');
+		for (const path of folders) {
+			if (!q || path.toLowerCase().includes(q)) out.push(path);
+		}
+		return out;
+	}
+
+	renderSuggestion(value, el) {
+		el.setText(value || 'Sin carpeta (junto a la nota de origen)');
+	}
+
+	/**
+	 * La implementación base solo avisa al callback: hay que escribir el valor
+	 * en el campo y cerrar la lista a mano.
+	 */
+	selectSuggestion(value, evt) {
+		this.setValue(value);
+		this.close();
+		super.selectSuggestion(value, evt);
+	}
+}
+
+/* ------------------------------------------------------------------ */
 /* Ajustes                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -499,15 +550,19 @@ class HeadingToNoteSettingTab extends PluginSettingTab {
 			.setDesc(
 				'Carpeta donde se crean las notas extraídas. Si se deja vacío, se usa la carpeta de la nota de origen.'
 			)
-			.addText((t) =>
-				t
-					.setPlaceholder('ej. Zettelkasten')
+			.addText((t) => {
+				t.setPlaceholder('ej. Zettelkasten')
 					.setValue(this.plugin.settings.destinationFolder)
 					.onChange(async (v) => {
 						this.plugin.settings.destinationFolder = v;
 						await this.plugin.saveSettings();
-					})
-			);
+					});
+				const suggest = new FolderSuggest(this.app, t.inputEl);
+				suggest.onSelect(async (v) => {
+					this.plugin.settings.destinationFolder = v;
+					await this.plugin.saveSettings();
+				});
+			});
 
 		new Setting(containerEl)
 			.setName('Abrir la nota nueva')
