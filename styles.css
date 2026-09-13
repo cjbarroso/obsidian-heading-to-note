@@ -1,0 +1,26 @@
+/* Heading to Note — modal de selección de encabezado */
+
+.h2n-suggestion {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5em;
+}
+
+.h2n-level {
+	color: var(--text-faint);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	flex-shrink: 0;
+}
+
+.h2n-text {
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.h2n-line {
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	flex-shrink: 0;
+}
