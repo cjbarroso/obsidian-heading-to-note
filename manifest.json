@@ -1,7 +1,7 @@
 {
 	"id": "heading-to-note",
 	"name": "Heading to Note",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.5.0",
 	"description": "Pick a heading and turn its section, with all of its subsections, into a new note, leaving a link behind.",
 	"author": "Carlos José Barroso",
