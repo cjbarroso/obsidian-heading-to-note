@@ -7,12 +7,28 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Obsidian installs the release whose tag matches `version` in
+      # manifest.json. A tag like `v1.1.0` would never be found, so fail loudly
+      # instead of publishing an unreachable release.
+      - name: Check that the tag matches the manifest version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(jq -r .version manifest.json)"
+          if [ "$TAG" != "$version" ]; then
+            echo "::error::Tag '$TAG' does not match manifest.json version '$version'."
+            echo "Tag releases as the bare version, without a leading 'v'."
+            exit 1
+          fi
 
       - name: Create or update the release with plugin assets
         env:
@@ -27,3 +43,13 @@ jobs:
               --generate-notes \
               main.js manifest.json styles.css
           fi
+
+      # Recommended by Obsidian for plugins submitted to the community
+      # directory: a signed build provenance attestation for the assets.
+      - name: Attest the release assets
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
