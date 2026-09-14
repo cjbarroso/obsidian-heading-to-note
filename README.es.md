@@ -4,12 +4,23 @@ Plugin de [Obsidian](https://obsidian.md) que toma un encabezado de una nota y *
 completa —el encabezado y todas sus subsecciones— a una nota nueva, dejando un enlace donde estaba
 la sección.
 
+![El selector de encabezados, con el nivel y el número de línea de cada uno](assets/heading-picker.png)
+
 Pensado para un flujo [Zettelkasten](https://es.wikipedia.org/wiki/Zettelkasten) / PKM donde una
 sección de una nota larga termina mereciendo nota propia.
 
 ## Instalación
 
-### Desde Obsidian, con BRAT (recomendado)
+### Desde la tienda de plugins de la comunidad
+
+1. En Obsidian, abre **Ajustes → Plugins de la comunidad → Explorar**.
+2. Busca **Heading to Note**, pulsa **Instalar** y luego **Activar**.
+
+> [!NOTE]
+> El plugin está enviado a la tienda y puede seguir en revisión. Si todavía no aparece en la
+> búsqueda, instálalo con BRAT.
+
+### Con BRAT (canal beta)
 
 [BRAT](https://github.com/TfTHacker/obsidian42-brat) instala plugins que no están en la tienda de la
 comunidad y los mantiene actualizados desde los releases de GitHub.
@@ -79,8 +90,13 @@ Tres formas de dispararlo:
 | Propiedades excluidas | `id, aliases` | Propiedades que nunca se copian (evita duplicar el `id` del Zettelkasten). |
 | Conservar la línea del encabezado | activado | Desactivado, la nota nueva empieza directamente en el cuerpo de la sección. |
 | Dejar un enlace | activado | Desactivado, la sección desaparece sin rastro. |
-| Formato del enlace | `[[Nota nueva]]` | O `> [!abstract] Extraído a [[Nota nueva]]`. |
+| Formato del enlace | Wikilink | O un callout: `> [!abstract] Extraído a [[Nota nueva]]`. |
 | Actualizar enlaces entrantes | activado | Reescribe los enlaces del resto del vault. |
+
+## Idiomas
+
+La interfaz sigue el idioma configurado en Obsidian: **inglés** por defecto y **español** cuando la
+app está en español. El callout que queda en la nota de origen usa el mismo idioma.
 
 ## Notas y límites
 

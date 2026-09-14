@@ -4,12 +4,23 @@ An [Obsidian](https://obsidian.md) plugin that takes a heading in your note and 
 section — the heading plus every subsection under it — into a new note, then leaves a link where the
 section used to be.
 
+![The heading picker listing every heading in the note, with its level and line number](assets/heading-picker.png)
+
 Built for a [Zettelkasten](https://en.wikipedia.org/wiki/Zettelkasten) / PKM workflow where a section
 of a long note turns out to deserve a note of its own.
 
 ## Installation
 
-### From Obsidian, with BRAT (recommended)
+### From the community plugin directory
+
+1. In Obsidian, open **Settings → Community plugins → Browse**.
+2. Search for **Heading to Note**, then **Install** and **Enable**.
+
+> [!NOTE]
+> The plugin has been submitted to the directory and may still be under review. If it does not show
+> up in the search yet, use BRAT below.
+
+### With BRAT (beta channel)
 
 [BRAT](https://github.com/TfTHacker/obsidian42-brat) installs plugins that are not in the community
 store, and keeps them updated from GitHub releases.
@@ -50,11 +61,9 @@ Three ways to run it:
 
 | Where | Command |
 |---|---|
-| Command palette | **Convertir un encabezado en nota nueva** — opens a searchable list of every heading in the note |
-| Command palette | **Convertir la sección actual en nota nueva** — uses the heading that contains the cursor |
-| Editor right click | **Convertir sección en nota nueva** |
-
-> The in-app interface is in Spanish. Nothing else about the plugin is language specific.
+| Command palette | **Convert a heading into a new note** — opens a searchable list of every heading in the note |
+| Command palette | **Convert the current section into a new note** — uses the heading that contains the cursor |
+| Editor right click | **Convert section into a new note** |
 
 ## What it does
 
@@ -79,8 +88,13 @@ Three ways to run it:
 | Excluded properties | `id, aliases` | Properties that are never copied (keeps a Zettelkasten `id` from being duplicated). |
 | Keep the heading line | on | Off: the new note starts directly with the section body. |
 | Leave a link | on | Off: the section disappears with no trace. |
-| Link format | `[[New note]]` | Or `> [!abstract] Extraído a [[New note]]`. |
+| Link format | Wikilink | Or a callout: `> [!abstract] Extracted to [[New note]]`. |
 | Update incoming links | on | Rewrites links elsewhere in the vault. |
+
+## Languages
+
+The interface follows the language configured in Obsidian: **English** by default, **Spanish** when
+the app is in Spanish. The callout left behind in the source note uses the same language.
 
 ## Notes and limitations
 

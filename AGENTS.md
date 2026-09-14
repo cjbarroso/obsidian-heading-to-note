@@ -21,7 +21,9 @@ Plugin de Obsidian **Heading to Note**: toma un encabezado de una nota y mueve s
 | `styles.css` | Estilos del modal de selección de encabezado. |
 | `versions.json` | Mapa versión → `minAppVersion`. Lo usa la tienda de la comunidad; BRAT no. |
 | `README.md` / `README.es.md` | Documentación pública (inglés / español). |
-| `.github/workflows/release.yml` | Al empujar un tag, crea el release con los tres assets. Es idempotente. |
+| `assets/heading-picker.png` | Captura del modal, incrustada en los dos README. |
+| `.github/workflows/release.yml` | Al empujar un tag, comprueba que el tag coincide con `version` y crea el release con los tres assets y su attestation. Es idempotente. |
+| `eslint.config.mjs` | **No existe en el repo a propósito.** El linter oficial se ejecuta en un directorio aparte (ver [Linter](#linter)); añadirlo aquí invitaría al escáner de la tienda a buscar un paso de build. |
 
 ## Cómo llega el plugin a Obsidian
 
@@ -48,15 +50,21 @@ Consecuencias prácticas:
   sube `main.js` literal. Cambiar esto obliga a cambiar el workflow.
 - **Cero dependencias.** Solo `require('obsidian')`.
 - **Tabulaciones** para indentar, como el resto de `main.js`.
-- **Idioma:** textos de UI en español (comandos, avisos, ajustes); comentarios en español;
-  nombres de funciones en inglés; `README.md` y la descripción del manifest en inglés
-  (cara pública), `README.es.md` en español.
+- **Idioma:** todos los textos de UI viven en la tabla `UI_TEXT` (`en` / `es`), y `uiText()` elige
+  tabla según `getLanguage()`: inglés por defecto, español si la app está en español. Añadir un
+  texto es añadir la clave en **las dos** tablas. Comentarios en español; nombres de funciones en
+  inglés; `README.md` y la descripción del manifest en inglés (cara pública), `README.es.md` en
+  español.
 - El plugin es **solo-editor**: los comandos se declaran con `editorCheckCallback` y se
   deshabilitan si no hay `ctx.file`.
 
 ## Mapa de `main.js`
 
 ```
+Textos de UI
+  UI_TEXT                    tablas en/es: comandos, avisos, ajustes y el callout del enlace
+  uiText()                   elige la tabla según getLanguage()
+
 Utilidades puras
   frontmatterEnd(lines)          línea exclusiva donde acaba el frontmatter (0 si no hay)
   scanHeadings(lines, from)      encabezados reales: ignora frontmatter y bloques de código
@@ -223,29 +231,82 @@ obsidian dev:screenshot path="_tmp_test/modal.png"
 | `[[otra#mismo título]]` | No se toca |
 | Sección al final del archivo | Sin líneas vacías colgando, archivo termina en newline |
 
+## Linter
+
+El repo **no lleva `package.json` a propósito**: el escáner de la tienda usa el primer script que
+encuentre entre `build`, `build:plugin` y `compile`, y aquí no queremos que haya ninguno. El linter
+oficial se ejecuta en un directorio aparte:
+
+```bash
+mkdir -p /tmp/h2n-lint && cd /tmp/h2n-lint
+cp <repo>/{main.js,manifest.json,styles.css,LICENSE,README.md} .
+# package.json privado con: eslint, eslint-plugin-obsidianmd, typescript, obsidian
+npm install --cache /tmp/h2n-lint/.npm-cache   # la caché global de npm puede tener basura de root
+npx eslint main.js                             # sin salida = limpio
+```
+
+El `eslint.config.mjs` de ese directorio tiene que ser explícito o el resultado es ruido:
+
+- `sourceType: 'commonjs'` y `@typescript-eslint/no-require-imports` desactivado (el plugin es
+  CommonJS y no hay bundler).
+- `no-implicit-globals` y `no-redeclare` desactivados: asumen un script de navegador y marcan las
+  declaraciones de nivel superior, y el `Plugin` importado, como si fueran globales.
+- El `ui/sentence-case` marca **error** en cualquier texto cuyo primer carácter sea signo de
+  puntuación y la primera palabra vaya en mayúscula (`[[Nota]]` → quiere `[[nota]]`), así que los
+  textos que empiezan por `[[` o `>` no pueden llevar la primera palabra capitalizada.
+
+**Ojo con la tabla de textos.** `obsidianmd/ui/sentence-case` solo inspecciona literales pasados
+directamente a `setName`/`setDesc`/`new Notice`, así que todo lo que sale de `UI_TEXT` se libra del
+linter. Para comprobarla de verdad hay que generar un archivo que pase cada texto a un `Setting` y
+pasarle el linter a ese archivo; si no, la tabla se puede degradar sin que nadie avise.
+
+```bash
+# extrae UI_TEXT cargando main.js con un require('obsidian') simulado
+node /tmp/h2n-probe/loader.cjs
+```
+
 ## Publicar una versión
 
-BRAT compara versiones: **si no subes `version` en `manifest.json`, no llega la actualización.**
+Hay dos destinos (BRAT y la tienda de la comunidad) y los dos se alimentan del mismo release de
+GitHub.
+
+1. Sube `version` en `manifest.json` (semver `x.y.z`) y añade la entrada en `versions.json`.
+   Sube `minAppVersion` si usas APIs nuevas: `getLanguage()` exige **1.8.7** y
+   `AbstractInputSuggest`, 1.4.10. `versions.json` permite que una app antigua instale la última
+   versión compatible, pero **solo si existe un release con ese tag**.
+2. Crea el tag **sin `v`**. El tag tiene que ser idéntico al `version` del manifest: Obsidian busca
+   el release por ese nombre. Un `v1.1.0` apunta a un release que Obsidian nunca encuentra.
 
 ```bash
 cd ~/src/Personal/obsidian-heading-to-note
 # 1. editar main.js
 # 2. subir "version" en manifest.json y añadir la entrada en versions.json
 git commit -am "feat: ..."
-git tag v1.0.1
-git push origin main --tags        # el workflow crea el release con los assets
-gh run list --limit 1              # confirmar que el run pasó
+git tag 1.1.0
+git push origin main 1.1.0         # el workflow aborta si el tag no coincide con version
+gh run watch                       # crea el release con los 3 assets y su attestation
+```
+
+Comprobación de que el release sirve para instalar (esto es lo que hacen Obsidian y BRAT):
+
+```bash
+gh release download 1.1.0 --repo cjbarroso/obsidian-heading-to-note --dir /tmp/check
+# deben estar main.js, manifest.json y styles.css, con el id y la version correctos
 ```
 
 En Obsidian, BRAT lo recoge al arrancar (`updateAtStartup: true`) o con el comando
 `BRAT: Check for updates to all beta plugins`.
 
-Comprobación de que el release sirve para instalar (esto es lo que hace BRAT):
+### Tienda de la comunidad
 
-```bash
-gh release download v1.0.1 --repo cjbarroso/obsidian-heading-to-note --dir /tmp/check
-# deben estar main.js, manifest.json y styles.css, con el id y la version correctos
-```
+La entrada se envía **una sola vez** en <https://community.obsidian.md> (cuenta de Obsidian con
+GitHub conectado); a partir de ahí basta con publicar releases. La revisión es automática y cubre
+manifest, releases, código y build; se puede previsualizar con **Review branch** antes de crear el
+tag. Lo que ya está resuelto aquí: descripción del manifest (≤250 caracteres, inglés, termina en
+punto), licencia que GitHub reconoce como MIT, los tres assets en el release, sin `innerHTML`, sin
+estilos en línea, sin atajos por defecto, sin `app` global, sin telemetría. Con `minAppVersion`
+≥ 1.13.0 la tienda recomienda además `getSettingDefinitions()` para que los ajustes aparezcan en el
+buscador; por debajo de 1.13.0 `display()` sigue siendo obligatorio.
 
 ## Trampas
 
@@ -258,5 +319,8 @@ gh release download v1.0.1 --repo cjbarroso/obsidian-heading-to-note --dir /tmp/
 - **`AbstractInputSuggest` no rellena el campo por su cuenta.** Su `selectSuggestion` base solo
   llama al callback de `onSelect`: sin sobrescribirlo, el campo se queda con lo tecleado y la
   lista abierta (ver `FolderSuggest.selectSuggestion`).
-- Los textos de la UI están en español; si algún día se envía a la tienda de la comunidad,
-  habrá que internacionalizar antes.
+- **`dev:screenshot` puede capturar un fotograma viejo.** Con el modal abierto suele salir la
+  ventana sin él. `obsidian dev:cdp method=Page.captureScreenshot params='{"format":"png"}'`
+  devuelve un PNG en base64 dentro de un JSON y sí captura el estado actual; recorta luego con
+  `magick -crop`.
+- La UI es bilingüe (`UI_TEXT`); cualquier texto nuevo tiene que entrar en las dos tablas.
