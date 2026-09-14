@@ -13,6 +13,7 @@ const {
 	AbstractInputSuggest,
 	Notice,
 	TFolder,
+	getLanguage,
 	normalizePath,
 	parseYaml,
 	stringifyYaml,
@@ -32,6 +33,127 @@ const DEFAULT_SETTINGS = {
 const MAX_TITLE_LENGTH = 120;
 const FENCE_RE = /^[ \t]*(`{3,}|~{3,})/;
 const HEADING_RE = /^(#{1,6})[ \t]+(.*)$/;
+
+/* ------------------------------------------------------------------ */
+/* Textos de la interfaz                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * La interfaz sigue el idioma de Obsidian: español cuando la app está en
+ * español, inglés en cualquier otro caso. `getLanguage()` devuelve el código
+ * ISO configurado (por ejemplo "es" o "en").
+ *
+ * Los textos que acaban dentro de una nota (el callout del enlace de vuelta)
+ * también salen de aquí, para que la nota y la interfaz hablen igual.
+ */
+const UI_TEXT = {
+	en: {
+		cmdPickHeading: 'Convert a heading into a new note',
+		cmdCurrentSection: 'Convert the current section into a new note',
+		menuExtractSection: 'Convert section into a new note',
+
+		noHeadings: 'This note has no headings.',
+		cursorOutsideSection: 'The cursor is not inside a section with a heading.',
+		emptySection: 'The section is empty: there is nothing to extract.',
+		createFailed: 'Could not create the new note: ',
+		sectionMovedTo: 'Section moved to "',
+		untitledNote: 'Untitled note',
+		extractedTo: 'Extracted to',
+
+		modalPlaceholder: 'Heading to convert into a note…',
+		modalEmpty: 'No matching headings',
+		modalNavigate: 'To navigate',
+		modalExtract: 'To extract',
+		modalCancel: 'To cancel',
+
+		noDestinationFolder: 'No folder (next to the source note)',
+
+		groupDestination: 'Destination',
+		destinationFolder: 'Destination folder',
+		destinationFolderDesc:
+			'Folder where extracted notes are created. If left empty, the folder of the source note is used.',
+		destinationFolderPlaceholder: 'Zettelkasten',
+		openNewNote: 'Open the new note',
+		openNewNoteDesc: 'Opens the newly created note in a new tab.',
+
+		groupContent: 'Content',
+		inheritFrontmatter: 'Inherit the frontmatter',
+		inheritFrontmatterDesc: 'Copies the properties of the source note into the new note.',
+		excludedKeys: 'Excluded properties',
+		excludedKeysDesc: 'Properties that are not copied, separated by commas.',
+		excludedKeysPlaceholder: 'Property names',
+		includeHeading: 'Keep the heading line',
+		includeHeadingDesc:
+			'When off, the new note starts directly with the body of the section, since the title is already the file name.',
+
+		groupSourceNote: 'Source note',
+		linkBack: 'Leave a link',
+		linkBackDesc: 'Replaces the moved section with a link to the new note.',
+		linkBackFormat: 'Link format',
+		linkBackFormatDesc: 'How the link left behind in the source note is written.',
+		linkBackFormatWikilink: 'Wikilink',
+		linkBackFormatCallout: 'Callout',
+		updateLinks: 'Update incoming links',
+		updateLinksDesc:
+			'Rewrites the links that pointed to the moved headings so that they point to the new note.',
+	},
+	es: {
+		cmdPickHeading: 'Convertir un encabezado en nota nueva',
+		cmdCurrentSection: 'Convertir la sección actual en nota nueva',
+		menuExtractSection: 'Convertir sección en nota nueva',
+
+		noHeadings: 'Esta nota no tiene encabezados.',
+		cursorOutsideSection: 'El cursor no está dentro de ninguna sección con encabezado.',
+		emptySection: 'La sección está vacía: no hay nada que extraer.',
+		createFailed: 'No se pudo crear la nota nueva: ',
+		sectionMovedTo: 'Sección movida a "',
+		untitledNote: 'Nota sin título',
+		extractedTo: 'Extraído a',
+
+		modalPlaceholder: 'Encabezado a convertir en nota…',
+		modalEmpty: 'Sin encabezados que coincidan',
+		modalNavigate: 'Para navegar',
+		modalExtract: 'Para extraer',
+		modalCancel: 'Para cancelar',
+
+		noDestinationFolder: 'Sin carpeta (junto a la nota de origen)',
+
+		groupDestination: 'Destino',
+		destinationFolder: 'Carpeta destino',
+		destinationFolderDesc:
+			'Carpeta donde se crean las notas extraídas. Si se deja vacío, se usa la carpeta de la nota de origen.',
+		destinationFolderPlaceholder: 'Zettelkasten',
+		openNewNote: 'Abrir la nota nueva',
+		openNewNoteDesc: 'Abre la nota recién creada en una pestaña nueva.',
+
+		groupContent: 'Contenido',
+		inheritFrontmatter: 'Heredar el frontmatter',
+		inheritFrontmatterDesc: 'Copia las propiedades de la nota de origen a la nota nueva.',
+		excludedKeys: 'Propiedades excluidas',
+		excludedKeysDesc: 'Propiedades que no se copian, separadas por comas.',
+		excludedKeysPlaceholder: 'Nombres de propiedades',
+		includeHeading: 'Conservar la línea del encabezado',
+		includeHeadingDesc:
+			'Desactivado, la nota nueva empieza directamente en el texto de la sección, ya que el título está en el nombre del archivo.',
+
+		groupSourceNote: 'Nota de origen',
+		linkBack: 'Dejar un enlace',
+		linkBackDesc: 'Sustituye la sección movida por un enlace a la nota nueva.',
+		linkBackFormat: 'Formato del enlace',
+		linkBackFormatDesc: 'Cómo se escribe el enlace que queda en la nota de origen.',
+		linkBackFormatWikilink: 'Wikilink',
+		linkBackFormatCallout: 'Callout',
+		updateLinks: 'Actualizar enlaces entrantes',
+		updateLinksDesc:
+			'Reescribe los enlaces que apuntaban a los encabezados movidos para que apunten a la nota nueva.',
+	},
+};
+
+/** Textos del idioma configurado en Obsidian. */
+function uiText() {
+	const code = String(getLanguage() || 'en').toLowerCase();
+	return code.startsWith('es') ? UI_TEXT.es : UI_TEXT.en;
+}
 
 /* ------------------------------------------------------------------ */
 /* Utilidades de texto (puras)                                         */
@@ -96,11 +218,11 @@ function normalizeHeading(text) {
 /** Título de archivo válido, sin formato Markdown ni caracteres prohibidos. */
 function sanitizeFilename(name) {
 	let s = String(name);
-	s = s.replace(/\[\[([^\[\]|]*)\|([^\[\]]*)\]\]/g, '$2'); // [[destino|alias]]
-	s = s.replace(/\[\[([^\[\]]*)\]\]/g, '$1'); // [[destino]]
+	s = s.replace(/\[\[([^[\]|]*)\|([^[\]]*)\]\]/g, '$2'); // [[destino|alias]]
+	s = s.replace(/\[\[([^[\]]*)\]\]/g, '$1'); // [[destino]]
 	s = s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'); // [texto](url)
 	s = s.replace(/[*_`~]/g, ''); // énfasis y código
-	s = s.replace(/[\\/:*?"<>|#^\[\]]/g, ''); // prohibidos en nombres de archivo
+	s = s.replace(/[\\/:*?"<>|#^[\]]/g, ''); // prohibidos en nombres de archivo
 	s = s.replace(/\s+/g, ' ').trim();
 	s = s.replace(/^\.+/, '').replace(/\.+$/, '').trim();
 	if (s.length > MAX_TITLE_LENGTH) s = s.slice(0, MAX_TITLE_LENGTH).trim();
@@ -115,16 +237,18 @@ class HeadingToNotePlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
+		this.text = uiText();
+
 		this.addSettingTab(new HeadingToNoteSettingTab(this.app, this));
 
 		this.addCommand({
 			id: 'extract-heading',
-			name: 'Convertir un encabezado en nota nueva',
+			name: this.text.cmdPickHeading,
 			editorCheckCallback: (checking, editor, ctx) => {
 				if (!ctx.file) return false;
 				const headings = this.headingsOf(editor);
 				if (!headings.length) {
-					if (!checking) new Notice('Esta nota no tiene encabezados.');
+					if (!checking) new Notice(this.text.noHeadings);
 					return false;
 				}
 				if (!checking) this.chooseHeading(editor, ctx.file);
@@ -134,12 +258,12 @@ class HeadingToNotePlugin extends Plugin {
 
 		this.addCommand({
 			id: 'extract-current-section',
-			name: 'Convertir la sección actual en nota nueva',
+			name: this.text.cmdCurrentSection,
 			editorCheckCallback: (checking, editor, ctx) => {
 				const info = ctx.file ? this.cursorSection(editor) : null;
 				if (!info) {
 					if (!checking) {
-						new Notice('El cursor no está dentro de ninguna sección con encabezado.');
+						new Notice(this.text.cursorOutsideSection);
 					}
 					return false;
 				}
@@ -156,7 +280,7 @@ class HeadingToNotePlugin extends Plugin {
 				if (!info) return;
 				menu.addItem((item) =>
 					item
-						.setTitle('Convertir sección en nota nueva')
+						.setTitle(this.text.menuExtractSection)
 						.setIcon('file-plus-2')
 						.onClick(() => this.extractSection(editor, file, info))
 				);
@@ -187,10 +311,12 @@ class HeadingToNotePlugin extends Plugin {
 	chooseHeading(editor, file) {
 		const headings = this.headingsOf(editor);
 		if (!headings.length) {
-			new Notice('Esta nota no tiene encabezados.');
+			new Notice(this.text.noHeadings);
 			return;
 		}
-		new HeadingSuggestModal(this.app, headings, (h) => this.extractSection(editor, file, h)).open();
+		new HeadingSuggestModal(this.app, headings, this.text, (h) =>
+			this.extractSection(editor, file, h)
+		).open();
 	}
 
 	/* ---------------- extracción ---------------- */
@@ -210,11 +336,11 @@ class HeadingToNotePlugin extends Plugin {
 		}
 		const moved = lines.slice(bodyStart, last);
 		if (!includeHeading && !moved.length) {
-			new Notice('La sección está vacía: no hay nada que extraer.');
+			new Notice(this.text.emptySection);
 			return;
 		}
 
-		const title = sanitizeFilename(heading.text) || 'Nota sin título';
+		const title = sanitizeFilename(heading.text) || this.text.untitledNote;
 		const folder = await this.resolveFolder(file);
 		const path = this.availablePath(folder, title);
 
@@ -229,7 +355,7 @@ class HeadingToNotePlugin extends Plugin {
 			newFile = await this.app.vault.create(path, content);
 		} catch (e) {
 			console.error('[heading-to-note] no se pudo crear la nota', e);
-			new Notice('No se pudo crear la nota nueva: ' + e.message);
+			new Notice(this.text.createFailed + e.message);
 			return;
 		}
 
@@ -258,7 +384,7 @@ class HeadingToNotePlugin extends Plugin {
 			}
 		}
 
-		new Notice('Sección movida a "' + newFile.path + '"');
+		new Notice(this.text.sectionMovedTo + newFile.path + '"');
 	}
 
 	/** Sustituye [from, to) por el enlace de retorno, sin romper el buffer. */
@@ -281,7 +407,7 @@ class HeadingToNotePlugin extends Plugin {
 
 		try {
 			editor.transaction({ changes: [change] });
-		} catch (e) {
+		} catch {
 			// Fallback para versiones sin transacciones.
 			const next = lines.slice();
 			next.splice(from, Math.max(to - from, 0), ...(linkLine ? [linkLine] : []));
@@ -309,7 +435,7 @@ class HeadingToNotePlugin extends Plugin {
 		if (!this.settings.linkBack) return '';
 		const linktext = this.app.metadataCache.fileToLinktext(newFile, sourceFile.path);
 		if (this.settings.linkBackFormat === 'callout') {
-			return '> [!abstract] Extraído a [[' + linktext + ']]';
+			return '> [!abstract] ' + this.text.extractedTo + ' [[' + linktext + ']]';
 		}
 		return '[[' + linktext + ']]';
 	}
@@ -333,7 +459,7 @@ class HeadingToNotePlugin extends Plugin {
 		let obj;
 		try {
 			obj = parseYaml(raw);
-		} catch (e) {
+		} catch {
 			return '---\n' + raw + '\n---\n';
 		}
 		if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
@@ -345,7 +471,7 @@ class HeadingToNotePlugin extends Plugin {
 		let yaml;
 		try {
 			yaml = stringifyYaml(obj).trimEnd();
-		} catch (e) {
+		} catch {
 			return '---\n' + raw + '\n---\n';
 		}
 		if (!yaml) return '';
@@ -408,7 +534,7 @@ class HeadingToNotePlugin extends Plugin {
 			if (!original.includes('[[')) continue;
 
 			let changed = false;
-			const updated = original.replace(/(!?)\[\[([^\[\]\n]+)\]\]/g, (full, bang, inner) => {
+			const updated = original.replace(/(!?)\[\[([^[\]\n]+)\]\]/g, (full, bang, inner) => {
 				const hash = inner.indexOf('#');
 				if (hash === -1) return full;
 
@@ -416,7 +542,7 @@ class HeadingToNotePlugin extends Plugin {
 				const frag = inner.slice(hash + 1);
 				const bar = frag.indexOf('|');
 				const headingPart = normalizeHeading(
-					(bar === -1 ? frag : frag.slice(0, bar)).replace(/\^[^\^]*$/, '')
+					(bar === -1 ? frag : frag.slice(0, bar)).replace(/\^[^^]*$/, '')
 				);
 				if (!headingPart || !names.has(headingPart)) return full;
 
@@ -449,16 +575,17 @@ class HeadingToNotePlugin extends Plugin {
 /* ------------------------------------------------------------------ */
 
 class HeadingSuggestModal extends SuggestModal {
-	constructor(app, headings, onChoose) {
+	constructor(app, headings, text, onChoose) {
 		super(app);
 		this.headings = headings;
+		this.text = text;
 		this.onChoose = onChoose;
-		this.setPlaceholder('Encabezado a convertir en nota…');
-		this.emptyStateText = 'Sin encabezados que coincidan';
+		this.setPlaceholder(text.modalPlaceholder);
+		this.emptyStateText = text.modalEmpty;
 		this.setInstructions([
-			{ command: '↑↓', purpose: 'navegar' },
-			{ command: '↵', purpose: 'extraer' },
-			{ command: 'esc', purpose: 'cancelar' },
+			{ command: '↑↓', purpose: text.modalNavigate },
+			{ command: '↵', purpose: text.modalExtract },
+			{ command: 'esc', purpose: text.modalCancel },
 		]);
 	}
 
@@ -489,8 +616,9 @@ class HeadingSuggestModal extends SuggestModal {
  * significa "junto a la nota de origen", igual que el campo en blanco.
  */
 class FolderSuggest extends AbstractInputSuggest {
-	constructor(app, inputEl) {
+	constructor(app, inputEl, text) {
 		super(app, inputEl);
+		this.text = text;
 		this.limit = 50;
 	}
 
@@ -515,7 +643,7 @@ class FolderSuggest extends AbstractInputSuggest {
 	}
 
 	renderSuggestion(value, el) {
-		el.setText(value || 'Sin carpeta (junto a la nota de origen)');
+		el.setText(value || this.text.noDestinationFolder);
 	}
 
 	/**
@@ -541,23 +669,22 @@ class HeadingToNoteSettingTab extends PluginSettingTab {
 
 	display() {
 		const { containerEl } = this;
+		const s = this.plugin.text;
 		containerEl.empty();
 
-		new Setting(containerEl).setName('Destino').setHeading();
+		new Setting(containerEl).setName(s.groupDestination).setHeading();
 
 		new Setting(containerEl)
-			.setName('Carpeta destino')
-			.setDesc(
-				'Carpeta donde se crean las notas extraídas. Si se deja vacío, se usa la carpeta de la nota de origen.'
-			)
+			.setName(s.destinationFolder)
+			.setDesc(s.destinationFolderDesc)
 			.addText((t) => {
-				t.setPlaceholder('ej. Zettelkasten')
+				t.setPlaceholder(s.destinationFolderPlaceholder)
 					.setValue(this.plugin.settings.destinationFolder)
 					.onChange(async (v) => {
 						this.plugin.settings.destinationFolder = v;
 						await this.plugin.saveSettings();
 					});
-				const suggest = new FolderSuggest(this.app, t.inputEl);
+				const suggest = new FolderSuggest(this.app, t.inputEl, s);
 				suggest.onSelect(async (v) => {
 					this.plugin.settings.destinationFolder = v;
 					await this.plugin.saveSettings();
@@ -565,8 +692,8 @@ class HeadingToNoteSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Abrir la nota nueva')
-			.setDesc('Abre la nota recién creada en la pestaña activa.')
+			.setName(s.openNewNote)
+			.setDesc(s.openNewNoteDesc)
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.openNewNote).onChange(async (v) => {
 					this.plugin.settings.openNewNote = v;
@@ -574,11 +701,11 @@ class HeadingToNoteSettingTab extends PluginSettingTab {
 				})
 			);
 
-		new Setting(containerEl).setName('Contenido').setHeading();
+		new Setting(containerEl).setName(s.groupContent).setHeading();
 
 		new Setting(containerEl)
-			.setName('Heredar el frontmatter')
-			.setDesc('Copia las propiedades de la nota de origen a la nota nueva.')
+			.setName(s.inheritFrontmatter)
+			.setDesc(s.inheritFrontmatterDesc)
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.inheritFrontmatter).onChange(async (v) => {
 					this.plugin.settings.inheritFrontmatter = v;
@@ -587,11 +714,11 @@ class HeadingToNoteSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Propiedades excluidas')
-			.setDesc('Propiedades que no se copian, separadas por comas.')
+			.setName(s.excludedKeys)
+			.setDesc(s.excludedKeysDesc)
 			.addText((t) =>
 				t
-					.setPlaceholder('id, aliases')
+					.setPlaceholder(s.excludedKeysPlaceholder)
 					.setValue(this.plugin.settings.excludedKeys)
 					.onChange(async (v) => {
 						this.plugin.settings.excludedKeys = v;
@@ -600,10 +727,8 @@ class HeadingToNoteSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Conservar la línea del encabezado')
-			.setDesc(
-				'Desactivado, la nota nueva empieza directamente en el texto de la sección (el título ya está en el nombre del archivo).'
-			)
+			.setName(s.includeHeading)
+			.setDesc(s.includeHeadingDesc)
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.includeHeading).onChange(async (v) => {
 					this.plugin.settings.includeHeading = v;
@@ -611,11 +736,11 @@ class HeadingToNoteSettingTab extends PluginSettingTab {
 				})
 			);
 
-		new Setting(containerEl).setName('Nota de origen').setHeading();
+		new Setting(containerEl).setName(s.groupSourceNote).setHeading();
 
 		new Setting(containerEl)
-			.setName('Dejar un enlace')
-			.setDesc('Sustituye la sección movida por un enlace a la nota nueva.')
+			.setName(s.linkBack)
+			.setDesc(s.linkBackDesc)
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.linkBack).onChange(async (v) => {
 					this.plugin.settings.linkBack = v;
@@ -624,12 +749,12 @@ class HeadingToNoteSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Formato del enlace')
-			.setDesc('Cómo se escribe el enlace que queda en la nota de origen.')
+			.setName(s.linkBackFormat)
+			.setDesc(s.linkBackFormatDesc)
 			.addDropdown((d) =>
 				d
-					.addOption('wikilink', '[[Nota nueva]]')
-					.addOption('callout', 'Callout: > [!abstract] Extraído a …')
+					.addOption('wikilink', s.linkBackFormatWikilink)
+					.addOption('callout', s.linkBackFormatCallout)
 					.setValue(this.plugin.settings.linkBackFormat)
 					.onChange(async (v) => {
 						this.plugin.settings.linkBackFormat = v;
@@ -638,10 +763,8 @@ class HeadingToNoteSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Actualizar enlaces entrantes')
-			.setDesc(
-				'Reescribe los enlaces que apuntaban a los encabezados movidos para que apunten a la nota nueva.'
-			)
+			.setName(s.updateLinks)
+			.setDesc(s.updateLinksDesc)
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.updateLinks).onChange(async (v) => {
 					this.plugin.settings.updateLinks = v;
