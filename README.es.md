@@ -11,27 +11,36 @@ sección de una nota larga termina mereciendo nota propia.
 
 ## Instalación
 
-### Desde la tienda de plugins de la comunidad
+Heading to Note está en el
+[catálogo oficial de plugins de la comunidad](https://community.obsidian.md/plugins/heading-to-note),
+así que se instala sin salir de Obsidian:
 
-1. En Obsidian, abre **Ajustes → Plugins de la comunidad → Explorar**.
-2. Busca **Heading to Note**, pulsa **Instalar** y luego **Activar**.
+1. Abre **Ajustes → Plugins de la comunidad → Explorar**.
+2. Busca **Heading to Note**.
+3. Pulsa **Instalar** y luego **Activar**.
 
-### Con BRAT (canal beta)
+Eso es todo. Cuando se publique una versión nueva, Obsidian te ofrecerá la actualización.
 
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) instala plugins que no están en la tienda de la
-comunidad y los mantiene actualizados desde los releases de GitHub.
+### Versiones beta
+
+Los releases se publican antes en GitHub que en el catálogo. Para probar esas versiones tempranas,
+instala [BRAT](https://github.com/TfTHacker/obsidian42-brat) y apúntalo al repositorio:
 
 1. En Obsidian, abre **Ajustes → Plugins de la comunidad → Explorar**.
 2. Busca **BRAT** (`Obsidian42 - BRAT`), pulsa **Instalar** y luego **Activar**.
 3. Abre la paleta de comandos (`Ctrl/Cmd + P`) y ejecuta
    **`BRAT: Add a beta plugin for testing`**.
 4. Pega este repositorio: `cjbarroso/obsidian-heading-to-note`
-5. Pulsa **Add Plugin**. BRAT descarga el último release.
-6. Ve a **Ajustes → Plugins de la comunidad** y activa **Heading to Note**.
+5. Pulsa **Add Plugin** y activa **Heading to Note** en
+   **Ajustes → Plugins de la comunidad**.
 
-BRAT solo necesita el nombre del repositorio: no hay que compilar ni copiar archivos a mano.
+BRAT solo necesita el nombre del repositorio: no hay que compilar ni copiar archivos a mano. No
+necesitas BRAT si lo has instalado desde el catálogo: los dos gestionan la misma carpeta.
 
 ### Instalación manual
+
+Si prefieres no usar el catálogo, o estás montando un vault sin conexión, copia tú los tres archivos
+del release:
 
 1. Descarga `main.js`, `manifest.json` y `styles.css` del
    [último release](https://github.com/cjbarroso/obsidian-heading-to-note/releases/latest).

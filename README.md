@@ -11,26 +11,34 @@ of a long note turns out to deserve a note of its own.
 
 ## Installation
 
-### From the community plugin directory
+Heading to Note is in the
+[official community plugin directory](https://community.obsidian.md/plugins/heading-to-note), so you
+can install it without leaving Obsidian:
 
-1. In Obsidian, open **Settings → Community plugins → Browse**.
-2. Search for **Heading to Note**, then **Install** and **Enable**.
+1. Open **Settings → Community plugins → Browse**.
+2. Search for **Heading to Note**.
+3. Select **Install**, then **Enable**.
 
-### With BRAT (beta channel)
+That's the whole install. When a new version is published, Obsidian offers you the update.
 
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) installs plugins that are not in the community
-store, and keeps them updated from GitHub releases.
+### Beta versions
+
+Releases are published on GitHub before they reach the directory. To run those early versions,
+install [BRAT](https://github.com/TfTHacker/obsidian42-brat) and point it at the repository:
 
 1. In Obsidian, open **Settings → Community plugins → Browse**.
 2. Search for **BRAT** (`Obsidian42 - BRAT`), then **Install** and **Enable** it.
 3. Open the command palette (`Ctrl/Cmd + P`) and run **`BRAT: Add a beta plugin for testing`**.
 4. Paste this repository: `cjbarroso/obsidian-heading-to-note`
-5. Click **Add Plugin**. BRAT downloads the latest release.
-6. Go to **Settings → Community plugins** and enable **Heading to Note**.
+5. Select **Add Plugin**, then enable **Heading to Note** in **Settings → Community plugins**.
 
-BRAT only needs the repository name — no build step, no manual file copying.
+BRAT only needs the repository name — no build step, no manual file copying. You don't need BRAT if
+you installed from the directory: both manage the same plugin folder.
 
 ### Manual installation
+
+If you would rather not use the directory, or you are setting up a vault offline, copy the three
+release files yourself:
 
 1. Download `main.js`, `manifest.json` and `styles.css` from the
    [latest release](https://github.com/cjbarroso/obsidian-heading-to-note/releases/latest).
