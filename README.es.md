@@ -16,10 +16,6 @@ sección de una nota larga termina mereciendo nota propia.
 1. En Obsidian, abre **Ajustes → Plugins de la comunidad → Explorar**.
 2. Busca **Heading to Note**, pulsa **Instalar** y luego **Activar**.
 
-> [!NOTE]
-> El plugin está enviado a la tienda y puede seguir en revisión. Si todavía no aparece en la
-> búsqueda, instálalo con BRAT.
-
 ### Con BRAT (canal beta)
 
 [BRAT](https://github.com/TfTHacker/obsidian42-brat) instala plugins que no están en la tienda de la

@@ -16,10 +16,6 @@ of a long note turns out to deserve a note of its own.
 1. In Obsidian, open **Settings → Community plugins → Browse**.
 2. Search for **Heading to Note**, then **Install** and **Enable**.
 
-> [!NOTE]
-> The plugin has been submitted to the directory and may still be under review. If it does not show
-> up in the search yet, use BRAT below.
-
 ### With BRAT (beta channel)
 
 [BRAT](https://github.com/TfTHacker/obsidian42-brat) installs plugins that are not in the community
